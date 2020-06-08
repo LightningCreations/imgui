@@ -6747,7 +6747,7 @@ static void ImGui::TabBarLayout(ImGuiTabBar* tab_bar)
         ImGuiTabItem* tab = &tab_bar->Tabs[tab_n];
         IM_ASSERT(tab->LastFrameVisible >= tab_bar->PrevFrameVisible);
 
-        if (most_recently_selected_tab == NULL || most_recently_selected_tab->LastFrameSelected < tab->LastFrameSelected)
+        if (!(tab->Flags & ImGuiTabItemFlags_Button) && (most_recently_selected_tab == NULL || most_recently_selected_tab->LastFrameSelected < tab->LastFrameSelected))
             most_recently_selected_tab = tab;
         if (tab->ID == tab_bar->SelectedTabId)
             found_selected_tab_id = true;
@@ -7103,6 +7103,9 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
         return false;
     }
 
+    if (flags & ImGuiTabItemFlags_Button)
+        flags |= ImGuiTabItemFlags_NoCloseButton | ImGuiTabItemFlags_NoCloseWithMiddleMouseButton;
+
     // Store into ImGuiTabItemFlags_NoCloseButton, also honor ImGuiTabItemFlags_NoCloseButton passed by user (although not documented)
     if (flags & ImGuiTabItemFlags_NoCloseButton)
         p_open = NULL;
@@ -7129,6 +7132,7 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
     const bool tab_bar_appearing = (tab_bar->PrevFrameVisible + 1 < g.FrameCount);
     const bool tab_bar_focused = (tab_bar->Flags & ImGuiTabBarFlags_IsFocused) != 0;
     const bool tab_appearing = (tab->LastFrameVisible + 1 < g.FrameCount);
+    const bool is_button_tab = (flags & ImGuiTabItemFlags_Button) != 0;
     tab->LastFrameVisible = g.FrameCount;
     tab->Flags = flags;
 
@@ -7151,6 +7155,10 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
     if ((flags & ImGuiTabItemFlags_SetSelected) && (tab_bar->SelectedTabId != id)) // SetSelected can only be passed on explicit tab bar
         tab_bar->NextSelectedTabId = id;
 
+    // Button tabs can not be selected.
+    if (tab_bar->VisibleTabId == tab->ID && is_button_tab)
+        tab_bar->VisibleTabId = tab_bar->SelectedTabId = 0;
+
     // Lock visibility
     // (Note: tab_contents_visible != tab_selected... because CTRL+TAB operations may preview some tabs without selecting them!)
     bool tab_contents_visible = (tab_bar->VisibleTabId == id);
@@ -7158,8 +7166,8 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
         tab_bar->VisibleTabWasSubmitted = true;
 
     // On the very first frame of a tab bar we let first tab contents be visible to minimize appearing glitches
-    if (!tab_contents_visible && tab_bar->SelectedTabId == 0 && tab_bar_appearing)
-        if (tab_bar->Tabs.Size == 1 && !(tab_bar->Flags & ImGuiTabBarFlags_AutoSelectNewTabs))
+    if (!tab_contents_visible && tab_bar->SelectedTabId == 0 && tab_bar_appearing && !(tab->Flags & ImGuiTabItemFlags_Button))
+        if (!tab_bar->VisibleTabWasSubmitted && !(tab_bar->Flags & ImGuiTabBarFlags_AutoSelectNewTabs))
             tab_contents_visible = true;
 
     // Note that tab_is_new is not necessarily the same as tab_appearing! When a tab bar stops being submitted
@@ -7202,12 +7210,14 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
     }
 
     // Click to Select a tab
-    ImGuiButtonFlags button_flags = (ImGuiButtonFlags_PressedOnClick | ImGuiButtonFlags_AllowItemOverlap);
+    ImGuiButtonFlags button_flags = ImGuiButtonFlags_AllowItemOverlap;
+    if (!is_button_tab)
+        button_flags |= ImGuiButtonFlags_PressedOnClick;
     if (g.DragDropActive)
         button_flags |= ImGuiButtonFlags_PressedOnDragDropHold;
     bool hovered, held;
     bool pressed = ButtonBehavior(bb, id, &hovered, &held, button_flags);
-    if (pressed)
+    if (pressed && !is_button_tab)
         tab_bar->NextSelectedTabId = id;
     hovered |= (g.HoveredId == id);
 
@@ -7246,13 +7256,21 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
 
     // Render tab shape
     ImDrawList* display_draw_list = window->DrawList;
-    const ImU32 tab_col = GetColorU32((held || hovered) ? ImGuiCol_TabHovered : tab_contents_visible ? (tab_bar_focused ? ImGuiCol_TabActive : ImGuiCol_TabUnfocusedActive) : (tab_bar_focused ? ImGuiCol_Tab : ImGuiCol_TabUnfocused));
-    TabItemBackground(display_draw_list, bb, flags, tab_col);
+    ImGuiCol tab_color;
+    if (is_button_tab)
+        tab_color = held ? ImGuiCol_ButtonActive : (hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
+    else if (hovered || held)
+        tab_color = ImGuiCol_TabHovered;
+    else if (tab_contents_visible)
+        tab_color = tab_bar_focused ? ImGuiCol_TabActive : ImGuiCol_TabUnfocusedActive;
+    else
+        tab_color = tab_bar_focused ? ImGuiCol_Tab : ImGuiCol_TabUnfocused;
+    TabItemBackground(display_draw_list, bb, flags, GetColorU32(tab_color));
     RenderNavHighlight(bb, id);
 
     // Select with right mouse button. This is so the common idiom for context menu automatically highlight the current widget.
     const bool hovered_unblocked = IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
-    if (hovered_unblocked && (IsMouseClicked(1) || IsMouseReleased(1)))
+    if (hovered_unblocked && (IsMouseClicked(1) || IsMouseReleased(1)) && !is_button_tab)
         tab_bar->NextSelectedTabId = id;
 
     if (tab_bar->Flags & ImGuiTabBarFlags_NoCloseWithMiddleMouseButton)
@@ -7278,7 +7296,7 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
         if (!(tab_bar->Flags & ImGuiTabBarFlags_NoTooltip))
             SetTooltip("%.*s", (int)(FindRenderedTextEnd(label) - label), label);
 
-    return tab_contents_visible;
+    return tab_contents_visible || (is_button_tab && pressed);
 }
 
 // [Public] This is call is 100% optional but it allows to remove some one-frame glitches when a tab has been unexpectedly removed.

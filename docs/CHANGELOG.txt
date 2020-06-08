@@ -43,6 +43,8 @@ Breaking Changes:
 
 Other Changes:
 
+- TabBar: Added ImGuiTabItemFlags_Button flag with which tab item returns true only on frame it was
+  clicked on, making tab item behave like a button. [@rokups]
 - TreeNode: Fixed bug where BeginDragDropSource() failed when the _OpenOnDoubleClick flag is
   enabled (bug introduced in 1.76, but pre-1.76 it would also fail unless the _OpenOnArrow
   flag was also set, and _OpenOnArrow is frequently set along with _OpenOnDoubleClick).
