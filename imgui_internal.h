@@ -1699,8 +1699,9 @@ struct ImGuiTabItem
     float               Offset;                 // Position relative to beginning of tab
     float               Width;                  // Width currently displayed
     float               ContentWidth;           // Width of actual contents, stored during BeginTabItem() call
+    short               TabIdx;                 // Submission order index
 
-    ImGuiTabItem()      { ID = 0; Flags = ImGuiTabItemFlags_None; LastFrameVisible = LastFrameSelected = -1; NameOffset = -1; Offset = Width = ContentWidth = 0.0f; }
+    ImGuiTabItem()      { ID = 0; Flags = ImGuiTabItemFlags_None; LastFrameVisible = LastFrameSelected = -1; NameOffset = -1; Offset = Width = ContentWidth = 0.0f; TabIdx = -1; }
 };
 
 // Storage for a tab bar (sizeof() 92~96 bytes)
@@ -1727,7 +1728,8 @@ struct ImGuiTabBar
     ImS8                ReorderRequestDir;
     bool                WantLayout;
     bool                VisibleTabWasSubmitted;
-    short               LastTabItemIdx;         // For BeginTabItem()/EndTabItem()
+    short               LastTabItemIdx;         // For BeginTabItem()/EndTabItem(), display index of last tab item
+    short               LastTabIdx;             // Submission order index of last tab item
     ImVec2              FramePadding;           // style.FramePadding locked at the time of BeginTabBar()
     ImGuiTextBuffer     TabsNames;              // For non-docking tab bar we re-append names in a contiguous buffer.
 

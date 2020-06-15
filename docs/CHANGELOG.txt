@@ -43,6 +43,7 @@ Breaking Changes:
 
 Other Changes:
 
+- TabBar: Added ImGuiTabItemFlags_NoReorder flag wich prevents tab item from being reordered. [@rokups]
 - TabBar: Added ImGuiTabItemFlags_Button flag with which tab item returns true only on frame it was
   clicked on, making tab item behave like a button. [@rokups]
 - TreeNode: Fixed bug where BeginDragDropSource() failed when the _OpenOnDoubleClick flag is

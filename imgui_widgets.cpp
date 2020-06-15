@@ -6554,7 +6554,7 @@ ImGuiTabBar::ImGuiTabBar()
     ReorderRequestTabId = 0;
     ReorderRequestDir = 0;
     WantLayout = VisibleTabWasSubmitted = false;
-    LastTabItemIdx = -1;
+    LastTabItemIdx = LastTabIdx = -1;
 }
 
 static int IMGUI_CDECL TabItemComparerByVisibleOffset(const void* lhs, const void* rhs)
@@ -6628,6 +6628,7 @@ bool    ImGui::BeginTabBarEx(ImGuiTabBar* tab_bar, const ImRect& tab_bar_bb, ImG
     tab_bar->PrevFrameVisible = tab_bar->CurrFrameVisible;
     tab_bar->CurrFrameVisible = g.FrameCount;
     tab_bar->FramePadding = g.Style.FramePadding;
+    tab_bar->LastTabIdx = -1;
 
     // Layout
     ItemSize(ImVec2(tab_bar->OffsetMaxIdeal, tab_bar->BarRect.GetHeight()), tab_bar->FramePadding.y);
@@ -6714,21 +6715,47 @@ static void ImGui::TabBarLayout(ImGuiTabBar* tab_bar)
         if (ImGuiTabItem* tab1 = TabBarFindTabByID(tab_bar, tab_bar->ReorderRequestTabId))
         {
             //IM_ASSERT(tab_bar->Flags & ImGuiTabBarFlags_Reorderable); // <- this may happen when using debug tools
+            ImGuiTabItem* tab2 = NULL;
             int tab2_order = tab_bar->GetTabOrder(tab1) + tab_bar->ReorderRequestDir;
-            if (tab2_order >= 0 && tab2_order < tab_bar->Tabs.Size)
+            while (tab2 == NULL && tab2_order >= 0 && tab2_order < tab_bar->Tabs.Size)
             {
-                ImGuiTabItem* tab2 = &tab_bar->Tabs[tab2_order];
-                ImGuiTabItem item_tmp = *tab1;
-                *tab1 = *tab2;
-                *tab2 = item_tmp;
-                if (tab2->ID == tab_bar->SelectedTabId)
-                    scroll_track_selected_tab_id = tab2->ID;
-                tab1 = tab2 = NULL;
+                tab2 = &tab_bar->Tabs[tab2_order];
+                if (tab2->Flags & ImGuiTabItemFlags_NoReorder)
+                    tab2 = NULL;
+                tab2_order += tab_bar->ReorderRequestDir;
             }
+
+            if (tab2 != NULL)
+            {
+                // Reorder tabs only when mouse enters vertical span of eligible tab item, tabs with _NoReorder flag are skipped.
+                const float tab_item_x = tab_bar->BarRect.Min.x + tab2->Offset;
+                if (tab_item_x < g.IO.MousePos.x && g.IO.MousePos.x < tab_item_x + tab2->Width)
+                {
+                    ImSwap(*tab1, *tab2);
+                    if (tab2->ID == tab_bar->SelectedTabId)
+                        scroll_track_selected_tab_id = tab2->ID;
+                    tab1 = tab2 = NULL;
+                }
+                if (tab_bar->Flags & ImGuiTabBarFlags_SaveSettings)
+                    MarkIniSettingsDirty();
+            }
+        }
+        tab_bar->ReorderRequestTabId = 0;
+    }
+    else if (tab_bar->Flags & ImGuiTabBarFlags_Reorderable)
+    {
+        // Force tab order to be same as submission order for tabs with _NoReorder.
+        for (int i = 0; i < tab_bar->Tabs.Size; i++)
+        {
+            // Skip tabs with correct order, or tabs that were not rendered on last frame and their TabIdx is outdated.
+            ImGuiTabItem* tab = &tab_bar->Tabs[i];
+            if (!(tab->Flags & ImGuiTabItemFlags_NoReorder) || i == tab->TabIdx || tab->LastFrameVisible + 1 < g.FrameCount)
+                continue;
+            IM_ASSERT(tab->TabIdx < tab_bar->Tabs.Size);
+            ImSwap(*tab, tab_bar->Tabs[tab->TabIdx]);
             if (tab_bar->Flags & ImGuiTabBarFlags_SaveSettings)
                 MarkIniSettingsDirty();
         }
-        tab_bar->ReorderRequestTabId = 0;
     }
 
     // Tab List Popup (will alter tab_bar->BarRect and therefore the available width!)
@@ -7127,6 +7154,7 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
         tab_is_new = true;
     }
     tab_bar->LastTabItemIdx = (short)tab_bar->Tabs.index_from_ptr(tab);
+    tab->TabIdx = ++tab_bar->LastTabIdx;
     tab->ContentWidth = size.x;
 
     const bool tab_bar_appearing = (tab_bar->PrevFrameVisible + 1 < g.FrameCount);
@@ -7228,19 +7256,13 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
     // Drag and drop: re-order tabs
     if (held && !tab_appearing && IsMouseDragging(0))
     {
-        if (!g.DragDropActive && (tab_bar->Flags & ImGuiTabBarFlags_Reorderable))
+        if (!g.DragDropActive && (tab_bar->Flags & ImGuiTabBarFlags_Reorderable) && !(tab->Flags & ImGuiTabItemFlags_NoReorder))
         {
             // While moving a tab it will jump on the other side of the mouse, so we also test for MouseDelta.x
             if (g.IO.MouseDelta.x < 0.0f && g.IO.MousePos.x < bb.Min.x)
-            {
-                if (tab_bar->Flags & ImGuiTabBarFlags_Reorderable)
-                    TabBarQueueChangeTabOrder(tab_bar, tab, -1);
-            }
+                TabBarQueueChangeTabOrder(tab_bar, tab, -1);
             else if (g.IO.MouseDelta.x > 0.0f && g.IO.MousePos.x > bb.Max.x)
-            {
-                if (tab_bar->Flags & ImGuiTabBarFlags_Reorderable)
-                    TabBarQueueChangeTabOrder(tab_bar, tab, +1);
-            }
+                TabBarQueueChangeTabOrder(tab_bar, tab, +1);
         }
     }
 
