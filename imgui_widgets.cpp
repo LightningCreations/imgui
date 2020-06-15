@@ -7153,14 +7153,15 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
         tab->Width = size.x;
         tab_is_new = true;
     }
-    tab_bar->LastTabItemIdx = (short)tab_bar->Tabs.index_from_ptr(tab);
-    tab->TabIdx = ++tab_bar->LastTabIdx;
-    tab->ContentWidth = size.x;
 
+    const bool tab_index_changed = tab->TabIdx != ++tab_bar->LastTabIdx;
     const bool tab_bar_appearing = (tab_bar->PrevFrameVisible + 1 < g.FrameCount);
     const bool tab_bar_focused = (tab_bar->Flags & ImGuiTabBarFlags_IsFocused) != 0;
     const bool tab_appearing = (tab->LastFrameVisible + 1 < g.FrameCount);
     const bool is_button_tab = (flags & ImGuiTabItemFlags_Button) != 0;
+    tab_bar->LastTabItemIdx = (short)tab_bar->Tabs.index_from_ptr(tab);
+    tab->ContentWidth = size.x;
+    tab->TabIdx = tab_bar->LastTabIdx;
     tab->LastFrameVisible = g.FrameCount;
     tab->Flags = flags;
 
@@ -7200,7 +7201,7 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
 
     // Note that tab_is_new is not necessarily the same as tab_appearing! When a tab bar stops being submitted
     // and then gets submitted again, the tabs will have 'tab_appearing=true' but 'tab_is_new=false'.
-    if (tab_appearing && (!tab_bar_appearing || tab_is_new))
+    if (tab_appearing && (!tab_bar_appearing || tab_is_new || tab_index_changed))
     {
         PushItemFlag(ImGuiItemFlags_NoNav | ImGuiItemFlags_NoNavDefaultFocus, true);
         ItemAdd(ImRect(), id);
