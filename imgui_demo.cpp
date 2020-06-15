@@ -2220,26 +2220,40 @@ static void ShowDemoWindowLayout()
                 tab_bar_flags &= ~(ImGuiTabBarFlags_FittingPolicyMask_ ^ ImGuiTabBarFlags_FittingPolicyScroll);
 
             // Tab Bar
-            const char* names[4] = { "Artichoke", "Beetroot", "Celery", "Daikon" };
-            static bool opened[4] = { true, true, true, true }; // Persistent user state
-            for (int n = 0; n < IM_ARRAYSIZE(opened); n++)
-            {
-                if (n > 0) { ImGui::SameLine(); }
-                ImGui::Checkbox(names[n], &opened[n]);
-            }
+            static ImVector<int> open_documents;
+            static int next_tab_index = 0;
+            if (next_tab_index == 0)
+                open_documents.push_back(next_tab_index++);
 
             // Passing a bool* to BeginTabItem() is similar to passing one to Begin():
             // the underlying bool will be set to false when the tab is closed.
             if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags))
             {
-                for (int n = 0; n < IM_ARRAYSIZE(opened); n++)
-                    if (opened[n] && ImGui::BeginTabItem(names[n], &opened[n], ImGuiTabItemFlags_None))
+                for (int n = 0; n < open_documents.Size;)
+                {
+                    bool opened = true;
+                    char tab_name[8];
+                    sprintf(tab_name, "Tab%04d", open_documents[n]);
+                    if (ImGui::BeginTabItem(tab_name, &opened, ImGuiTabItemFlags_None))
                     {
-                        ImGui::Text("This is the %s tab!", names[n]);
-                        if (n & 1)
+                        ImGui::Text("This is the %s tab!", tab_name);
+                        if (open_documents[n] & 1)
                             ImGui::Text("I am an odd tab.");
                         ImGui::EndTabItem();
                     }
+                    if (opened)
+                        n++;
+                    else
+                        open_documents.erase(open_documents.begin() + n);
+                }
+
+                // Tab item acting as a button. _NoReorder flag keeps tab button at it's submit order (last)
+                // and _Button makes BeginTabItem() return true only on frame it was pressed.
+                if (ImGui::BeginTabItem("+", NULL, ImGuiTabItemFlags_NoReorder | ImGuiTabItemFlags_Button))
+                {
+                    open_documents.push_back(next_tab_index++);
+                    ImGui::EndTabItem();
+                }
                 ImGui::EndTabBar();
             }
             ImGui::Separator();
