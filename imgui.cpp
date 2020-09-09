@@ -3493,7 +3493,7 @@ void ImGui::UpdateMouseMovingWindowNewFrame()
                 g.MouseViewport = moving_window->Viewport;
 
             // Clear the NoInput window flag set by the Viewport system
-            moving_window->Viewport->Flags &= ~ImGuiViewportFlags_NoInputs;
+            moving_window->Viewport->Flags &= ~ImGuiViewportFlags_NoInputs; // FIXME-VIEWPORT: Test engine managed to crash here because Viewport was NULL.
 
             ClearActiveID();
             g.MovingWindow = NULL;
@@ -6746,6 +6746,9 @@ void ImGui::BringWindowToDisplayFront(ImGuiWindow* window)
             g.Windows[g.Windows.Size - 1] = window;
             break;
         }
+
+    if (window->Viewport != NULL && window->Viewport->PlatformUserData != NULL)
+        g.PlatformIO.Platform_SetWindowFocus(window->Viewport);
 }
 
 void ImGui::BringWindowToDisplayBack(ImGuiWindow* window)
