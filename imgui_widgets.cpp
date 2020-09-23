@@ -2518,6 +2518,12 @@ float ImGui::ScaleRatioFromValueT(ImGuiDataType data_type, TYPE v, TYPE v_min, T
     return (float)((FLOATTYPE)(SIGNEDTYPE)(v_clamped - v_min) / (FLOATTYPE)(SIGNEDTYPE)(v_max - v_min));
 }
 
+#ifdef IMGUI_ENABLE_TEST_ENGINE
+// Explicitly instantiate templates used by test engine. They may be optimized out in release builds otherwise.
+template float ImGui::ScaleRatioFromValueT<ImU32, ImS32, float>(ImGuiDataType, ImU32, ImU32, ImU32, bool, float, float);
+template float ImGui::ScaleRatioFromValueT<ImS32, ImS32, float>(ImGuiDataType, ImS32, ImS32, ImS32, bool, float, float);
+#endif
+
 // Convert a parametric position on a slider into a value v in the output space (the logical opposite of ScaleRatioFromValueT)
 template<typename TYPE, typename SIGNEDTYPE, typename FLOATTYPE>
 TYPE ImGui::ScaleValueFromRatioT(ImGuiDataType data_type, float t, TYPE v_min, TYPE v_max, bool is_logarithmic, float logarithmic_zero_epsilon, float zero_deadzone_halfsize)
