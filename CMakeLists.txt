@@ -443,16 +443,16 @@ if (IMGUI_EXAMPLES)
     if (APPLE)
         # MacOS Metal example
         # FIXME: This sample is still broken.
-        add_executable(example_apple_metal MACOSX_BUNDLE
-            ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/main.m
-            ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/AppDelegate.h
-            ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/AppDelegate.m
-            ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/Renderer.h
-            ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/Renderer.mm
-            ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/ViewController.h
-            ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/ViewController.mm
-            ${IMGUI_EXAMPLES_DIR}/example_apple_metal/macOS/Base.lproj/Main.storyboard
-        )
+        #add_executable(example_apple_metal MACOSX_BUNDLE
+        #    ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/main.mm
+        #    ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/AppDelegate.h
+        #    ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/AppDelegate.m
+        #    ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/Renderer.h
+        #    ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/Renderer.mm
+        #    ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/ViewController.h
+        #    ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/ViewController.mm
+        #    ${IMGUI_EXAMPLES_DIR}/example_apple_metal/macOS/Base.lproj/Main.storyboard
+        #)
         target_link_libraries(example_apple_metal imgui imgui-osx imgui-metal)
         # Generate new plist
         file(READ ${IMGUI_EXAMPLES_DIR}/example_apple_metal/macOS/Info-macOS.plist INFO_PLIST)
