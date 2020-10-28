@@ -441,8 +441,8 @@ if (IMGUI_EXAMPLES)
         endif ()
     endfunction()
     if (APPLE)
-        # MacOS Metal example
-        # FIXME: This sample is still broken.
+        ## MacOS Metal example
+        ## FIXME: This sample is still broken.
         #add_executable(example_apple_metal MACOSX_BUNDLE
         #    ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/main.mm
         #    ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/AppDelegate.h
@@ -453,30 +453,30 @@ if (IMGUI_EXAMPLES)
         #    ${IMGUI_EXAMPLES_DIR}/example_apple_metal/Shared/ViewController.mm
         #    ${IMGUI_EXAMPLES_DIR}/example_apple_metal/macOS/Base.lproj/Main.storyboard
         #)
-        target_link_libraries(example_apple_metal imgui imgui-osx imgui-metal)
-        # Generate new plist
-        file(READ ${IMGUI_EXAMPLES_DIR}/example_apple_metal/macOS/Info-macOS.plist INFO_PLIST)
-        string(REPLACE "$(EXECUTABLE_NAME)" example_apple_metal INFO_PLIST "${INFO_PLIST}")
-        string(REPLACE "$(PRODUCT_BUNDLE_IDENTIFIER)" org.imgui.example.apple-metal-macos INFO_PLIST "${INFO_PLIST}")
-        string(REPLACE "$(MACOSX_DEPLOYMENT_TARGET)" 10.12 INFO_PLIST "${INFO_PLIST}")
-        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/example_apple_metal-info.plist "${INFO_PLIST}")
-        # Consume new plist
-        set_property(TARGET example_apple_metal PROPERTY
-            MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_BINARY_DIR}/example_apple_metal-info.plist)
-        # Compile storyboard
-        if(NOT "${CMAKE_GENERATOR}" MATCHES "^Xcode.*")
-            # Xcode compiles storyboard automatically. We must do it manually when using other build systems.
-            find_program(IBTOOL ibtool HINTS /usr/bin ${OSX_DEVELOPER_ROOT}/usr/bin)
-            add_custom_command(TARGET example_apple_metal POST_BUILD COMMAND ${IBTOOL} --errors --warnings --notices
-                --output-format human-readable-text --compile
-                ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/example_apple_metal.app/Contents/Resources/Base.lproj/Main.storyboardc
-                ${IMGUI_EXAMPLES_DIR}/example_apple_metal/macOS/Base.lproj/Main.storyboard
-                COMMENT "Compiling storyboard"
-            )
-        endif()
-        IMGUI_EXAMPLE(TARGET example_apple_opengl2 LINKS imgui-osx imgui-opengl2 SOURCE main.mm)
-        IMGUI_EXAMPLE(TARGET example_glfw_metal LINKS imgui-glfw imgui-metal SOURCE main.mm)
-        IMGUI_EXAMPLE(TARGET example_sdl_metal LINKS imgui-sdl imgui-metal SOURCE main.mm)
+        #target_link_libraries(example_apple_metal imgui imgui-osx imgui-metal)
+        ## Generate new plist
+        #file(READ ${IMGUI_EXAMPLES_DIR}/example_apple_metal/macOS/Info-macOS.plist INFO_PLIST)
+        #string(REPLACE "$(EXECUTABLE_NAME)" example_apple_metal INFO_PLIST "${INFO_PLIST}")
+        #string(REPLACE "$(PRODUCT_BUNDLE_IDENTIFIER)" org.imgui.example.apple-metal-macos INFO_PLIST "${INFO_PLIST}")
+        #string(REPLACE "$(MACOSX_DEPLOYMENT_TARGET)" 10.12 INFO_PLIST "${INFO_PLIST}")
+        #file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/example_apple_metal-info.plist "${INFO_PLIST}")
+        ## Consume new plist
+        #set_property(TARGET example_apple_metal PROPERTY
+        #    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_BINARY_DIR}/example_apple_metal-info.plist)
+        ## Compile storyboard
+        #if(NOT "${CMAKE_GENERATOR}" MATCHES "^Xcode.*")
+        #    # Xcode compiles storyboard automatically. We must do it manually when using other build systems.
+        #    find_program(IBTOOL ibtool HINTS /usr/bin ${OSX_DEVELOPER_ROOT}/usr/bin)
+        #    add_custom_command(TARGET example_apple_metal POST_BUILD COMMAND ${IBTOOL} --errors --warnings --notices
+        #        --output-format human-readable-text --compile
+        #        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/example_apple_metal.app/Contents/Resources/Base.lproj/Main.storyboardc
+        #        ${IMGUI_EXAMPLES_DIR}/example_apple_metal/macOS/Base.lproj/Main.storyboard
+        #        COMMENT "Compiling storyboard"
+        #    )
+        #endif()
+        #IMGUI_EXAMPLE(TARGET example_apple_opengl2 LINKS imgui-osx imgui-opengl2 SOURCE main.mm)
+        #IMGUI_EXAMPLE(TARGET example_glfw_metal LINKS imgui-glfw imgui-metal SOURCE main.mm)
+        #IMGUI_EXAMPLE(TARGET example_sdl_metal LINKS imgui-sdl imgui-metal SOURCE main.mm)
     endif ()
     if (WIN32)
         IMGUI_EXAMPLE(TARGET example_sdl_directx11 LINKS imgui-sdl imgui-dx11)
